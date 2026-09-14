@@ -22,7 +22,7 @@ def add_material(name, category, count):
     return material
 
 def show_material(material):
-    #Выводит информацию о материале.
+    #Выводит информацию о материале
     print("Карточка материала")
     print(f"Название:  {material['name']}")
     print(f"Категория: {material['category']}")
@@ -30,7 +30,7 @@ def show_material(material):
     print(f"Добавлен:  {material['added_at']}")
 
 def check_low_stock(material):
-    #Отслеживает материалы с малым остатком.
+    #Отслеживает материалы с малым остатком
     if material["count"] <= MIN_STOCK:
         return f"Внимание: материал «{material['name']}» заканчивается!"
     return f"Материал «{material['name']}» в достаточном количестве."
