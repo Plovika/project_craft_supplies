@@ -72,7 +72,7 @@ python main.py
 ### Как объекты связаны между собой
 
 ```
-User ──создаёт──▶ Operation ──изменяет──▶ Material
+User  создаёт Operation изменяет Material
 ```
 
 Благодаря тому, что операция хранит ссылки на объекты, из неё сразу можно узнать всё нужное: `operation.material.name`, `operation.user.email` и так далее.

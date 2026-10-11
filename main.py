@@ -1,4 +1,3 @@
-"""Точка запуска сервиса учёта материалов для творчества."""
 
 from collections.abc import Callable
 
@@ -27,7 +26,6 @@ Handler = Callable[[list[Material], list[User], list[Operation]], bool]
 
 
 def show_material(material: Material) -> None:
-    """Вывести карточку материала (функция из ПР1)."""
     print("Карточка материала")
     print(f"ID:         {material.id}")
     print(f"Название:   {material.name}")
@@ -37,7 +35,6 @@ def show_material(material: Material) -> None:
 
 
 def show_materials(materials: list[Material]) -> None:
-    """Вывести список материалов в виде таблицы."""
     if not materials:
         print("Материалы не найдены.")
         return
@@ -48,7 +45,6 @@ def show_materials(materials: list[Material]) -> None:
 
 
 def show_users(users: list[User]) -> None:
-    """Вывести список пользователей."""
     if not users:
         print("Пользователи не найдены.")
     for user in users:
