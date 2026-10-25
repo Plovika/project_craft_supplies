@@ -1,0 +1,89 @@
+/* Собственные стили проекта «Мастерская». Bootstrap даёт основу,
+   а этот файл - внешний вид, характерный именно для нашего сервиса. */
+
+:root {
+    --craft-accent: #c2552f;      /* терракота - цвет акцентов */
+    --craft-accent-dark: #9e4022;
+    --craft-paper: #faf6ef;       /* тёплый «бумажный» фон */
+    --craft-ink: #3b302a;         /* цвет основного текста */
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--craft-paper);
+    color: var(--craft-ink);
+}
+
+/* Шапка сайта с логотипом и навигацией */
+.site-header {
+    background-color: #fff;
+    border-bottom: 3px solid var(--craft-accent);
+    padding: 0.5rem 0;
+}
+
+.craft-logo {
+    width: 56px;
+    height: auto;
+}
+
+.site-nav .nav-link {
+    color: var(--craft-ink);
+    font-weight: 500;
+}
+
+.site-nav .nav-link:hover {
+    color: var(--craft-accent);
+}
+
+/* Главная страница */
+.hero {
+    max-width: 720px;
+}
+
+/* Фирменная кнопка */
+.btn-craft {
+    background-color: var(--craft-accent);
+    border-color: var(--craft-accent);
+    color: #fff;
+}
+
+.btn-craft:hover {
+    background-color: var(--craft-accent-dark);
+    border-color: var(--craft-accent-dark);
+    color: #fff;
+}
+
+/* Карточка материала */
+.material-card {
+    border: 1px solid #e6dccd;
+    border-left: 5px solid var(--craft-accent);
+    border-radius: 8px;
+}
+
+.material-category {
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8a7a6d;
+}
+
+.stock-badge {
+    font-size: 0.85rem;
+}
+
+/* Статус операции */
+.operation-status {
+    font-weight: 600;
+}
+
+.operation-status-cancelled {
+    text-decoration: line-through;
+}
+
+/* Подвал */
+.site-footer {
+    border-top: 1px solid #e6dccd;
+    padding-top: 1rem;
+    color: #8a7a6d;
+}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Главная – Мастерская{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h1 class="display-5">Учёт материалов для творчества</h1>
+        <p class="lead">
+            Краски, кисти, пряжа и бисер под контролем:
+            что есть, сколько осталось и кто что брал.
+        </p>
+        <p>
+            Сервис помогает не забывать о своих запасах, вовремя замечать,
+            что материал заканчивается, и видеть историю расхода и пополнений.
+        </p>
+        <p>Основные разделы:</p>
+        <a href="{% url 'materials:list' %}" class="btn btn-craft me-2">Материалы</a>
+        <a href="{% url 'operations:list' %}" class="btn btn-outline-secondary">История операций</a>
+    </section>
+{% endblock %}
