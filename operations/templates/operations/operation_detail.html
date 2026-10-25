@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if operation %}
+        Операция №{{ operation.id }} – Мастерская
+    {% else %}
+        Операция не найдена – Мастерская
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if operation %}
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title h3">Операция №{{ operation.id }}</h1>
+                <p class="card-text"><strong>Тип:</strong> {{ operation.kind }}</p>
+                <p class="card-text">
+                    <strong>Материал:</strong>
+                    <a href="{% url 'materials:detail' operation.material.id %}">
+                        {{ operation.material.name }}
+                    </a>
+                </p>
+                <p class="card-text">
+                    <strong>Количество:</strong>
+                    {{ operation.amount|stringformat:"+d" }} шт.
+                </p>
+                <p class="card-text">
+                    <strong>Пользователь:</strong>
+                    {{ operation.user.name }} ({{ operation.user.email }})
+                </p>
+                <p class="card-text"><strong>Дата:</strong> {{ operation.created_at }}</p>
+                <p class="card-text">
+                    <strong>Статус:</strong>
+                    {% include "operations/includes/operation_status.html" %}
+                </p>
+            </div>
+        </div>
+    {% else %}
+        <h1 class="text-danger">Операция не найдена</h1>
+        <p>Операции с указанным номером нет.</p>
+    {% endif %}
+
+    <a href="{% url 'operations:list' %}" class="btn btn-outline-secondary mt-3">
+        ← к истории операций
+    </a>
+{% endblock %}
