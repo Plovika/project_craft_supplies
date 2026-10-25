@@ -1,0 +1,13 @@
+<article class="card material-card mb-3">
+    <div class="card-body">
+        <p class="material-category">{{ material.category }}</p>
+        <h2 class="card-title h5">{{ material.name|default:"Без названия" }}</h2>
+        <p class="card-text">
+            Остаток:
+            {% include "materials/includes/stock_badge.html" %}
+        </p>
+        <a href="{% url 'materials:detail' material.id %}" class="btn btn-craft btn-sm">
+            Подробнее
+        </a>
+    </div>
+</article>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if material %}
+        {{ material.name }} – Мастерская
+    {% else %}
+        Материал не найден – Мастерская
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if material %}
+        <div class="card material-card mb-4">
+            <div class="card-body">
+                <p class="material-category">{{ material.category }}</p>
+                <h1 class="card-title h3">{{ material.name|default:"Без названия" }}</h1>
+                <p class="card-text"><strong>ID:</strong> {{ material.id }}</p>
+                <p class="card-text">
+                    <strong>Количество:</strong>
+                    {% include "materials/includes/stock_badge.html" %}
+                </p>
+                <p class="card-text"><strong>Добавлен:</strong> {{ material.added_at }}</p>
+                <p class="card-text">{{ material.check_low_stock }}</p>
+            </div>
+        </div>
+
+        <h2 class="h5">История операций ({{ history|length }})</h2>
+        <ul class="list-group">
+            {% for operation in history %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{% url 'operations:detail' operation.id %}">
+                        {{ operation.created_at }} · {{ operation.kind }}
+                        {{ operation.amount|stringformat:"+d" }} шт.
+                        ({{ operation.user.name }})
+                    </a>
+                    {% include "operations/includes/operation_status.html" %}
+                </li>
+            {% empty %}
+                <li class="list-group-item">Операций с этим материалом пока не было.</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <h1 class="text-danger">Материал не найден</h1>
+        <p>Материала с указанным номером нет.</p>
+    {% endif %}
+
+    <a href="{% url 'materials:list' %}" class="btn btn-outline-secondary mt-3">
+        ← к списку материалов
+    </a>
+{% endblock %}

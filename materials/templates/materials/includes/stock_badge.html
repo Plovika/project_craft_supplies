@@ -1,0 +1,5 @@
+{% if material.is_low_stock %}
+    <span class="badge bg-danger stock-badge">{{ material.count }} шт. · заканчивается</span>
+{% else %}
+    <span class="badge bg-success stock-badge">{{ material.count }} шт.</span>
+{% endif %}
