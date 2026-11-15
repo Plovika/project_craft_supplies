@@ -5,6 +5,10 @@
 {% block content %}
     <h1>Материалы</h1>
     <p class="text-muted">Всего материалов: {{ materials|length }}</p>
+    <p>
+        <a href="{% url 'materials:search' %}" class="btn btn-outline-secondary btn-sm me-2">Найти материалы</a>
+        <a href="{% url 'materials:search' %}?max_count=3" class="btn btn-outline-danger btn-sm">Что заканчивается</a>
+    </p>
 
     <div class="row">
         {% for material in materials %}

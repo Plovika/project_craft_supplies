@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика – Мастерская{% endblock %}
+
+{% block content %}
+    <h1>Статистика</h1>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-tile">
+                <div class="stat-value">{{ totals.materials_count }}</div>
+                <div class="stat-label">материалов в учёте</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-tile">
+                <div class="stat-value">{{ totals.total_count|default:0 }}</div>
+                <div class="stat-label">единиц всего</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-tile">
+                <div class="stat-value">{{ totals.avg_count|default:0 }}</div>
+                <div class="stat-label">в среднем на позицию (от {{ totals.min_count|default:0 }} до {{ totals.max_count|default:0 }})</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-tile">
+                <div class="stat-value">{{ active_operations }}</div>
+                <div class="stat-label">активных операций</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <section class="col-lg-6">
+            <h2 class="h5">По категориям</h2>
+            <table class="table table-sm bg-white">
+                <thead><tr><th>Категория</th><th>Позиций</th><th>Единиц</th></tr></thead>
+                <tbody>
+                    {% for row in by_category %}
+                        <tr><td>{{ row.category }}</td><td>{{ row.materials_count }}</td><td>{{ row.total_count }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="3">Данные отсутствуют.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h2 class="h5">Категории, где не меньше {{ big_category_size }} материалов</h2>
+            <ul class="list-group mb-4">
+                {% for row in big_categories %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ row.category }} <span>{{ row.materials_count }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">Таких категорий пока нет.</li>
+                {% endfor %}
+            </ul>
+
+            <h2 class="h5">Заканчиваются</h2>
+            <ul class="list-group">
+                {% for material in low_stock %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a href="{% url 'materials:detail' material.id %}">{{ material.name }}</a>
+                        <span class="badge bg-danger">{{ material.count }} шт.</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">Всего хватает.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="col-lg-6">
+            <h2 class="h5">Активные операции по материалам</h2>
+            <table class="table table-sm bg-white">
+                <thead><tr><th>Материал</th><th>Операций</th><th>Изменение</th></tr></thead>
+                <tbody>
+                    {% for row in by_material %}
+                        <tr>
+                            <td>{{ row.material_name }}</td>
+                            <td>{{ row.operations_count }}</td>
+                            <td>{{ row.total_change|stringformat:"+d" }} шт.</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3">Данные отсутствуют.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h2 class="h5">Активность пользователей</h2>
+            <table class="table table-sm bg-white">
+                <thead><tr><th>Пользователь</th><th>Операций</th></tr></thead>
+                <tbody>
+                    {% for row in by_user %}
+                        <tr><td>{{ row.user_name|title }}</td><td>{{ row.operations_count }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2">Данные отсутствуют.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+{% endblock %}

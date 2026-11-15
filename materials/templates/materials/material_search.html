@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск материалов – Мастерская{% endblock %}
+
+{% block content %}
+    <h1>Поиск материалов</h1>
+
+    <form method="get" class="search-form row g-3 align-items-end mb-4">
+        <div class="col-sm-5">
+            <label for="category" class="form-label">Категория</label>
+            <select id="category" name="category" class="form-select">
+                <option value="">Все категории</option>
+                {% for item in categories %}
+                    <option value="{{ item.category }}" {% if item.category == category %}selected{% endif %}>
+                        {{ item.category }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <label for="max_count" class="form-label">Остаток не больше, шт.</label>
+            <input type="number" min="0" id="max_count" name="max_count" value="{{ max_count }}" class="form-control">
+        </div>
+        <div class="col-sm-3">
+            <button type="submit" class="btn btn-craft w-100">Найти</button>
+        </div>
+    </form>
+
+    {% if error %}
+        <div class="alert alert-warning">{{ error }}</div>
+    {% elif searched %}
+        <p class="text-muted">Найдено материалов: {{ materials|length }}</p>
+        <div class="row">
+            {% for material in materials %}
+                <div class="col-md-6 col-lg-4">
+                    {% include "materials/includes/material_card.html" %}
+                </div>
+            {% empty %}
+                <p>По этим условиям материалов нет.</p>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Выберите категорию и (или) укажите остаток, чтобы найти нужные материалы.</p>
+    {% endif %}
+
+    <a href="{% url 'materials:list' %}" class="btn btn-outline-secondary mt-3">
+        ← ко всем материалам
+    </a>
+{% endblock %}

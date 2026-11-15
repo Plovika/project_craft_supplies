@@ -20,7 +20,13 @@
                     {% include "materials/includes/stock_badge.html" %}
                 </p>
                 <p class="card-text"><strong>Добавлен:</strong> {{ material.added_at }}</p>
-                <p class="card-text">{{ material.check_low_stock }}</p>
+                <p class="card-text">
+                    {% if material.is_low_stock %}
+                        Внимание: материал «{{ material.name }}» заканчивается!
+                    {% else %}
+                        Материал «{{ material.name }}» в достаточном количестве.
+                    {% endif %}
+                </p>
             </div>
         </div>
 
@@ -31,7 +37,7 @@
                     <a href="{% url 'operations:detail' operation.id %}">
                         {{ operation.created_at }} · {{ operation.kind }}
                         {{ operation.amount|stringformat:"+d" }} шт.
-                        ({{ operation.user.name }})
+                        ({{ operation.user_name }})
                     </a>
                     {% include "operations/includes/operation_status.html" %}
                 </li>

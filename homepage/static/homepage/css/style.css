@@ -87,3 +87,33 @@ body {
     padding-top: 1rem;
     color: #8a7a6d;
 }
+
+/* Плитки с итогами на странице статистики */
+.stat-tile {
+    height: 100%;
+    padding: 1rem;
+    background-color: #fff;
+    border: 1px solid #e6dccd;
+    border-top: 4px solid var(--craft-accent);
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--craft-accent-dark);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #8a7a6d;
+}
+
+/* Переключатель «Все / Активные / Отменённые» */
+.status-filter .nav-link.active {
+    background-color: var(--craft-accent);
+}
+
+.status-filter .nav-link {
+    color: var(--craft-ink);
+}
