@@ -1,6 +1,6 @@
 <nav class="nav site-nav">
     <a class="nav-link" href="{% url 'homepage:index' %}">Главная</a>
-    <a class="nav-link" href="{% url 'materials:list' %}">Материалы</a>
+    <a class="nav-link" href="{% url 'materials:list' %}">Материалы ({{ site_materials_count }})</a>
     <a class="nav-link" href="{% url 'operations:list' %}">Операции</a>
     <a class="nav-link" href="{% url 'homepage:statistics' %}">Статистика</a>
 </nav>
