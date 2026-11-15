@@ -3,6 +3,7 @@ from datetime import date
 from unittest.mock import patch
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Count
 from django.db.models.deletion import ProtectedError
@@ -76,9 +77,11 @@ def test_constraints_and_protected_history():
     with pytest.raises(ProtectedError):
         operation.user.delete()
     with pytest.raises(IntegrityError), transaction.atomic():
-        Operation.objects.create(
-            material=operation.material, user=operation.user, amount=0,
-        )
+        Operation.objects.bulk_create([
+            Operation(
+                material=operation.material, user=operation.user, amount=0,
+            ),
+        ])
     with pytest.raises(IntegrityError), transaction.atomic():
         Material.objects.create(name="Минус", category="Тест", count=-1)
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -91,7 +94,7 @@ def test_cancel_restores_count_once():
     operation.cancel()
     operation.refresh_from_db()
     operation.material.refresh_from_db()
-    assert operation.is_cancelled
+    assert operation.status == Operation.Status.CANCELLED
     assert operation.material.count == before - operation.amount
     with pytest.raises(ValueError):
         operation.cancel()
@@ -102,12 +105,13 @@ def test_cannot_cancel_restock_after_consumption():
     operation = Operation.objects.create(
         material=material, user=User.objects.first(), amount=5,
     )
-    with pytest.raises(ValueError):
+    Material.objects.filter(pk=material.pk).update(count=1)
+    with pytest.raises(ValidationError):
         operation.cancel()
     material.refresh_from_db()
     operation.refresh_from_db()
     assert material.count == 1
-    assert not operation.is_cancelled
+    assert operation.status == Operation.Status.ACTIVE
 
 
 def test_forward_and_reverse_relations_without_extra_queries():
@@ -151,11 +155,12 @@ def test_invalid_operation_filters(parameters):
 def test_operations_search_filters_sort_and_pages():
     user = User.objects.first()
     material = Material.objects.get(pk=1)
-    Operation.objects.bulk_create([
-        Operation(material=material, user=user, amount=-1,
-                  created_at=date(2026, 10, 1))
-        for _ in range(7)
-    ])
+    Material.objects.filter(pk=material.pk).update(count=30)
+    for _ in range(7):
+        Operation.objects.create(
+            material=material, user=user, amount=-1,
+            created_at=date(2026, 10, 1),
+        )
     parameters = {
         "status": "active", "date": "2026-10-01", "material": material.pk,
         "user": user.pk, "q": "Акварель", "sort": "user", "page": 2,
@@ -177,8 +182,8 @@ def test_operations_search_filters_sort_and_pages():
 
 def test_sort_allowlist_and_cancelled_filter():
     operation = Operation.objects.get(pk=1)
-    operation.is_cancelled = True
-    operation.save(update_fields=["is_cancelled"])
+    operation.status = Operation.Status.CANCELLED
+    operation.save(update_fields=["status"])
     active = client.get("/operations/", {"status": "active"})
     assert active.context["page_obj"].paginator.count == 0
     cancelled = client.get("/operations/", {"status": "cancelled"})
@@ -190,8 +195,8 @@ def test_sort_allowlist_and_cancelled_filter():
 
 def test_statistics_preserve_objects_without_operations():
     operation = Operation.objects.get(pk=1)
-    operation.is_cancelled = True
-    operation.save(update_fields=["is_cancelled"])
+    operation.status = Operation.Status.CANCELLED
+    operation.save(update_fields=["status"])
     response = client.get("/statistics/")
     context = response.context
     assert context["active_operations"] == 0

@@ -3,7 +3,8 @@ from django.test import Client, RequestFactory, override_settings
 from django.urls import reverse
 import pytest
 
-from models import Material, Operation, User
+from models import Material
+from operations.models import Operation as OrmOperation
 from materials.models import Material as OrmMaterial
 import homepage.views
 
@@ -17,7 +18,7 @@ client = Client()
     "/statistics/",
 ])
 def test_pages_open(url):
-    assert client.get(url).status_code == 200
+    assert client.get(url, follow=True).status_code == 200
 
 
 @pytest.mark.parametrize("url", [
@@ -33,7 +34,7 @@ def test_missing_material_message():
 
 
 def test_material_page_shows_data():
-    html = client.get("/materials/1/").content.decode()
+    html = client.get("/materials/1/", follow=True).content.decode()
     assert "Акварель Белые ночи" in html
 
 
@@ -48,7 +49,9 @@ def test_base_template_and_static_files():
 def test_named_urls_with_namespaces():
     assert reverse("homepage:index") == "/"
     assert reverse("materials:list") == "/materials/"
-    assert reverse("materials:detail", args=[3]) == "/materials/3/"
+    assert reverse(
+        "materials:detail", kwargs={"slug": "material-3"},
+    ) == "/materials/material-3/"
     assert reverse("operations:list") == "/operations/"
     assert reverse("operations:detail", args=[2]) == "/operations/2/"
     assert reverse("materials:search") == "/materials/search/"
@@ -74,14 +77,13 @@ def test_empty_operations_list():
 
 
 def test_operation_status_include():
-    material = Material(1, "Кисть", "Кисти", 5)
-    user = User(1, "Анна", "anna@example.com")
-    operation = Operation(1, material, user, -1)
+    operation = OrmOperation(amount=-1)
+
     context = {"operation": operation}
     template = "operations/includes/operation_status.html"
 
     assert "Активна" in render_to_string(template, context)
-    operation.is_cancelled = True
+    operation.status = OrmOperation.Status.CANCELLED
     assert "Отменена" in render_to_string(template, context)
 
 
