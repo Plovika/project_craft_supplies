@@ -8,3 +8,4 @@ __pycache__/
 # Django
 db.sqlite3
 data/craftbox_backup.sqlite
+data/craftbox_pr10_backup.sqlite3
