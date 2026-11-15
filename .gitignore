@@ -7,3 +7,4 @@ __pycache__/
 .vscode/
 # Django
 db.sqlite3
+data/craftbox_backup.sqlite
