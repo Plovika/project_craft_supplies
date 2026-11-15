@@ -1,128 +1,71 @@
-"""Страницы материалов: данные берутся из базы SQLite."""
+"""Список, поиск и карточки материалов через Django ORM."""
 
-import sqlite3
+from django.db.models import Q
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, render
 
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
-
-from db.database import get_connection
-
-# Запрос 1 из sql/queries.sql
-MATERIALS_SQL = """
-    SELECT id, name, category, count, count <= 3 AS is_low_stock
-    FROM materials
-    ORDER BY name
-"""
-
-# Запрос 2
-CATEGORIES_SQL = """
-    SELECT DISTINCT category
-    FROM materials
-    ORDER BY category
-"""
-
-# Запрос 3
-MATERIAL_SQL = """
-    SELECT id, name, category, count, added_at, count <= 3 AS is_low_stock
-    FROM materials
-    WHERE id = ?
-"""
-
-# Запрос 4
-SEARCH_SQL = """
-    SELECT id, name, category, count, count <= 3 AS is_low_stock
-    FROM materials
-    WHERE (? = '' OR category = ?)
-      AND (? IS NULL OR count <= ?)
-    ORDER BY count, name
-"""
-
-# Запрос 8
-HISTORY_SQL = """
-    SELECT
-        operations.id,
-        operations.created_at,
-        operations.amount,
-        operations.is_cancelled,
-        CASE WHEN operations.amount > 0 THEN 'Пополнение'
-             ELSE 'Расход' END AS kind,
-        users.name AS user_name
-    FROM operations
-    JOIN users ON operations.user_id = users.id
-    WHERE operations.material_id = ?
-    ORDER BY operations.created_at DESC, operations.id DESC
-"""
+from .models import Material
 
 
 def materials(request: HttpRequest) -> HttpResponse:
-    """Страница /materials/: список всех материалов."""
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    materials_list = conn.execute(MATERIALS_SQL).fetchall()
-    conn.close()
-
-    context = {
-        "materials": materials_list,
-    }
-
-    return render(request, "materials/material_list.html", context)
+    materials_list = Material.objects.order_by("name", "pk")
+    return render(
+        request, "materials/material_list.html", {"materials": materials_list},
+    )
 
 
 def material_search(request: HttpRequest) -> HttpResponse:
-    """Страница /materials/search/: поиск по категории и остатку."""
     category = request.GET.get("category", "").strip()
     max_count_text = request.GET.get("max_count", "").strip()
-    searched = "category" in request.GET or "max_count" in request.GET
-
+    query = request.GET.get("q", "").strip()
+    searched = any(
+        key in request.GET for key in ("category", "max_count", "q")
+    )
     error = ""
     max_count = None
     if max_count_text:
-        if max_count_text.isdigit():
+        try:
+            if not max_count_text.isascii() or not max_count_text.isdecimal():
+                raise ValueError
             max_count = int(max_count_text)
-        else:
-            error = "Остаток должен быть целым неотрицательным числом."
-
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    categories = conn.execute(CATEGORIES_SQL).fetchall()
-    results = []
+            if max_count > 9223372036854775807:
+                raise ValueError
+        except ValueError:
+            error = (
+                "Остаток должен быть целым неотрицательным числом до 2⁶³−1."
+            )
+    categories = Material.objects.order_by("category").values(
+        "category",
+    ).distinct()
+    results = Material.objects.none()
     if searched and not error:
-        results = conn.execute(
-            SEARCH_SQL,
-            [category, category, max_count, max_count],
-        ).fetchall()
-    conn.close()
-
-    context = {
-        "categories": categories,
-        "category": category,
-        "max_count": max_count_text,
-        "searched": searched,
-        "error": error,
-        "materials": results,
-    }
-
-    return render(request, "materials/material_search.html", context)
+        results = Material.objects.all()
+        if category:
+            results = results.filter(category=category)
+        if max_count is not None:
+            results = results.filter(count__lte=max_count)
+        if query:
+            results = results.filter(
+                Q(name__icontains=query) | Q(category__icontains=query),
+            )
+        results = results.order_by("count", "name", "pk")
+    return render(request, "materials/material_search.html", {
+        "categories": categories, "category": category,
+        "max_count": max_count_text, "q": query, "searched": searched,
+        "error": error, "materials": results,
+    })
 
 
 def material_detail(request: HttpRequest, material_id: int) -> HttpResponse:
-    """Страница /materials/<id>/: карточка материала и его история."""
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    material = conn.execute(MATERIAL_SQL, [material_id]).fetchone()
-    history = []
-    if material is not None:
-        history = conn.execute(HISTORY_SQL, [material_id]).fetchall()
-    conn.close()
-
-    context = {
-        "material": material,
-        "history": history,
-    }
-
-    return render(
-        request,
-        "materials/material_detail.html",
-        context,
-        status=404 if material is None else 200,
-    )
+    try:
+        material = get_object_or_404(Material, pk=material_id)
+    except Http404:
+        # Сохраняем существующее оформление отсутствующего материала.
+        return render(
+            request, "materials/material_detail.html",
+            {"material": None}, status=404,
+        )
+    history = material.operations.select_related("user").all()
+    return render(request, "materials/material_detail.html", {
+        "material": material, "history": history,
+    })

@@ -6,6 +6,10 @@
     <h1>Поиск материалов</h1>
 
     <form method="get" class="search-form row g-3 align-items-end mb-4">
+        <div class="col-12">
+            <label for="q" class="form-label">Название или категория</label>
+            <input type="search" id="q" name="q" value="{{ q }}" class="form-control">
+        </div>
         <div class="col-sm-5">
             <label for="category" class="form-label">Категория</label>
             <select id="category" name="category" class="form-select">

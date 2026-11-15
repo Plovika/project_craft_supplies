@@ -17,7 +17,7 @@
                 <p class="card-text">
                     <strong>Материал:</strong>
                     <a href="{% url 'materials:detail' operation.material_id %}">
-                        {{ operation.material_name }}
+                        {{ operation.material.name }}
                     </a>
                 </p>
                 <p class="card-text">
@@ -26,9 +26,9 @@
                 </p>
                 <p class="card-text">
                     <strong>Пользователь:</strong>
-                    {{ operation.user_name }} ({{ operation.user_email }})
+                    {{ operation.user.name }} ({{ operation.user.email }})
                 </p>
-                <p class="card-text"><strong>Дата:</strong> {{ operation.created_at }}</p>
+                <p class="card-text"><strong>Дата:</strong> {{ operation.created_at|date:"Y-m-d" }}</p>
                 <p class="card-text">
                     <strong>Статус:</strong>
                     {% include "operations/includes/operation_status.html" %}

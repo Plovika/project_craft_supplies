@@ -19,7 +19,7 @@
                     <strong>Количество:</strong>
                     {% include "materials/includes/stock_badge.html" %}
                 </p>
-                <p class="card-text"><strong>Добавлен:</strong> {{ material.added_at }}</p>
+                <p class="card-text"><strong>Добавлен:</strong> {{ material.added_at|date:"Y-m-d" }}</p>
                 <p class="card-text">
                     {% if material.is_low_stock %}
                         Внимание: материал «{{ material.name }}» заканчивается!
@@ -35,9 +35,9 @@
             {% for operation in history %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{% url 'operations:detail' operation.id %}">
-                        {{ operation.created_at }} · {{ operation.kind }}
+                        {{ operation.created_at|date:"Y-m-d" }} · {{ operation.kind }}
                         {{ operation.amount|stringformat:"+d" }} шт.
-                        ({{ operation.user_name }})
+                        ({{ operation.user.name }})
                     </a>
                     {% include "operations/includes/operation_status.html" %}
                 </li>

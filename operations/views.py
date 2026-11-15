@@ -1,92 +1,96 @@
-"""Страницы операций: данные берутся из базы SQLite."""
+"""История операций с фильтрацией, сортировкой и пагинацией через ORM."""
 
-import sqlite3
+from datetime import date
 
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.db.models import Case, CharField, F, Q, Value, When
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, render
 
-from db.database import get_connection
+from materials.models import Material
+from .models import Operation, User
 
-# Запрос 6 из sql/queries.sql
-OPERATIONS_SQL = """
-    SELECT
-        operations.id,
-        operations.created_at,
-        operations.amount,
-        operations.is_cancelled,
-        CASE WHEN operations.amount > 0 THEN 'Пополнение'
-             ELSE 'Расход' END AS kind,
-        materials.id AS material_id,
-        materials.name AS material_name,
-        users.name AS user_name
-    FROM operations
-    JOIN materials ON operations.material_id = materials.id
-    JOIN users ON operations.user_id = users.id
-    WHERE (? IS NULL OR operations.is_cancelled = ?)
-    ORDER BY operations.created_at DESC, operations.id DESC
-"""
-
-# Запрос 7
-OPERATION_SQL = """
-    SELECT
-        operations.id,
-        operations.created_at,
-        operations.amount,
-        operations.is_cancelled,
-        CASE WHEN operations.amount > 0 THEN 'Пополнение'
-             ELSE 'Расход' END AS kind,
-        materials.id AS material_id,
-        materials.name AS material_name,
-        users.name AS user_name,
-        users.email AS user_email
-    FROM operations
-    JOIN materials ON operations.material_id = materials.id
-    JOIN users ON operations.user_id = users.id
-    WHERE operations.id = ?
-"""
-
-# Значение фильтра в адресе -> значение is_cancelled в базе
-STATUS_FILTERS = {
-    "active": 0,
-    "cancelled": 1,
+SORT_FIELDS = {
+    "date": "-created_at",
+    "material": "material__name",
+    "user": "user__name",
 }
 
 
 def operations(request: HttpRequest) -> HttpResponse:
-    """Страница /operations/: история операций с фильтром по статусу."""
     status = request.GET.get("status", "")
-    is_cancelled = STATUS_FILTERS.get(status)
-
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    operations_list = conn.execute(
-        OPERATIONS_SQL,
-        [is_cancelled, is_cancelled],
-    ).fetchall()
-    conn.close()
-
-    context = {
-        "operations": operations_list,
-        "status": status if status in STATUS_FILTERS else "",
-    }
-
-    return render(request, "operations/operation_list.html", context)
+    selected_date = request.GET.get("date", "").strip()
+    material_id = request.GET.get("material", "").strip()
+    user_id = request.GET.get("user", "").strip()
+    query = request.GET.get("q", "").strip()
+    sort = request.GET.get("sort", "date")
+    if sort not in SORT_FIELDS:
+        sort = "date"
+    error = ""
+    operations_list = Operation.objects.all()
+    if status == "active":
+        operations_list = operations_list.exclude(is_cancelled=True)
+    elif status == "cancelled":
+        operations_list = operations_list.filter(is_cancelled=True)
+    else:
+        status = ""
+    if selected_date:
+        try:
+            parsed_date = date.fromisoformat(selected_date)
+        except ValueError:
+            error = "Укажите корректную дату в формате ГГГГ-ММ-ДД."
+        else:
+            operations_list = operations_list.filter(created_at=parsed_date)
+    for field, value in (("material_id", material_id), ("user_id", user_id)):
+        if value:
+            try:
+                if not value.isascii() or not value.isdecimal():
+                    raise ValueError
+                number = int(value)
+                if not 0 < number <= 9223372036854775807:
+                    raise ValueError
+            except ValueError:
+                error = "Выберите корректный материал и пользователя."
+            else:
+                operations_list = operations_list.filter(**{field: number})
+    if query:
+        operations_list = operations_list.filter(
+            Q(material__name__icontains=query)
+            | Q(user__name__icontains=query),
+        )
+    if error:
+        operations_list = operations_list.none()
+    operations_list = operations_list.annotate(
+        material_name=F("material__name"), user_name=F("user__name"),
+        kind=Case(
+            When(amount__gt=0, then=Value("Пополнение")),
+            default=Value("Расход"), output_field=CharField(),
+        ),
+    ).values(
+        "id", "created_at", "amount", "is_cancelled", "kind",
+        "material_id", "material_name", "user_name",
+    ).order_by(SORT_FIELDS[sort], "-id")
+    page_obj = Paginator(operations_list, 5).get_page(request.GET.get("page"))
+    return render(request, "operations/operation_list.html", {
+        "operations": page_obj, "page_obj": page_obj, "status": status,
+        "selected_date": selected_date, "selected_material": material_id,
+        "selected_user": user_id, "q": query, "sort": sort, "error": error,
+        "materials": Material.objects.order_by("name", "pk"),
+        "users": User.objects.order_by("name", "pk"),
+    })
 
 
 def operation_detail(request: HttpRequest, operation_id: int) -> HttpResponse:
-    """Страница /operations/<id>/: карточка операции."""
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    operation = conn.execute(OPERATION_SQL, [operation_id]).fetchone()
-    conn.close()
-
-    context = {
+    try:
+        operation = get_object_or_404(
+            Operation.objects.select_related("material", "user"),
+            pk=operation_id,
+        )
+    except Http404:
+        return render(
+            request, "operations/operation_detail.html",
+            {"operation": None}, status=404,
+        )
+    return render(request, "operations/operation_detail.html", {
         "operation": operation,
-    }
-
-    return render(
-        request,
-        "operations/operation_detail.html",
-        context,
-        status=404 if operation is None else 200,
-    )
+    })
