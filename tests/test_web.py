@@ -1,3 +1,5 @@
+import sqlite3
+
 from django.template.loader import render_to_string
 from django.test import Client, override_settings
 from django.urls import reverse
@@ -11,6 +13,9 @@ client = Client()
 
 @pytest.mark.parametrize("url", [
     "/", "/materials/", "/materials/1/", "/operations/", "/operations/1/",
+    "/materials/search/", "/materials/search/?category=Краски&max_count=3",
+    "/operations/?status=active", "/operations/?status=cancelled",
+    "/statistics/",
 ])
 def test_pages_open(url):
     assert client.get(url).status_code == 200
@@ -47,6 +52,8 @@ def test_named_urls_with_namespaces():
     assert reverse("materials:detail", args=[3]) == "/materials/3/"
     assert reverse("operations:list") == "/operations/"
     assert reverse("operations:detail", args=[2]) == "/operations/2/"
+    assert reverse("materials:search") == "/materials/search/"
+    assert reverse("homepage:statistics") == "/statistics/"
 
 
 def test_page_function_removed():
@@ -91,3 +98,42 @@ def test_custom_404_page():
     response = client.get("/nonexistent/")
     assert response.status_code == 404
     assert "404 – страница не найдена" in response.content.decode()
+
+
+def test_page_shows_data_from_database(test_db):
+    conn = sqlite3.connect(test_db)
+    conn.execute(
+        "UPDATE materials SET name = ? WHERE id = ?", ["Акварель НОВАЯ", 1]
+    )
+    conn.commit()
+    conn.close()
+    assert "Акварель НОВАЯ" in client.get("/materials/").content.decode()
+
+
+def test_search_page_results():
+    html = client.get(
+        "/materials/search/?category=Краски&max_count=3"
+    ).content.decode()
+    assert "Найдено материалов: 1" in html
+    assert "Акварель Белые ночи" in html
+
+
+def test_search_page_bad_number():
+    html = client.get("/materials/search/?max_count=abc").content.decode()
+    assert "целым неотрицательным числом" in html
+
+
+def test_search_page_empty_result():
+    html = client.get("/materials/search/?max_count=0").content.decode()
+    assert "По этим условиям материалов нет." in html
+
+
+def test_cancelled_filter_empty():
+    html = client.get("/operations/?status=cancelled").content.decode()
+    assert "Операции не найдены." in html
+
+
+def test_statistics_page():
+    html = client.get("/statistics/").content.decode()
+    assert "По категориям" in html
+    assert "Краски" in html
