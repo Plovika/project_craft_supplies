@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{% if operation %}Редактирование операции{% else %}Новая операция{% endif %} – Мастерская{% endblock %}
+
+{% block content %}
+    <h1>{% if operation %}Редактирование операции №{{ operation.pk }}{% else %}Новая операция{% endif %}</h1>
+    <form method="post" class="card card-body" novalidate>
+        {% csrf_token %}
+        {% if form.errors %}
+            <p class="text-danger" role="alert">Операция не сохранена. Исправьте ошибки ниже.</p>
+        {% endif %}
+        {% for error in form.non_field_errors %}
+            <p class="text-danger" role="alert">{{ error }}</p>
+        {% endfor %}
+        {% for field in form %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<div class="form-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}<div id="{{ field.auto_id }}_error">{% for error in field.errors %}<p class="text-danger mb-1" role="alert">{{ error }}</p>{% endfor %}</div>{% endif %}
+            </div>
+        {% endfor %}
+        <div>
+            <button type="submit" class="btn btn-craft">Сохранить</button>
+            <a href="{% url 'operations:list' %}" class="btn btn-outline-secondary">К истории операций</a>
+        </div>
+    </form>
+{% endblock %}

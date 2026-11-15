@@ -5,46 +5,23 @@
 {% block content %}
     <h1>История операций</h1>
 
+    <a href="{% url 'operations:create' %}" class="btn btn-craft mb-3">Новая операция</a>
     <form method="get" class="row g-3 align-items-end mb-4">
-        <input type="hidden" name="status" value="{{ status }}">
-        <div class="col-md-4">
-            <label for="q" class="form-label">Материал или пользователь</label>
-            <input type="search" id="q" name="q" value="{{ q }}" class="form-control">
-        </div>
-        <div class="col-md-4">
-            <label for="date" class="form-label">Дата операции</label>
-            <input type="date" id="date" name="date" value="{{ selected_date }}" class="form-control">
-        </div>
-        <div class="col-md-4">
-            <label for="material" class="form-label">Материал</label>
-            <select id="material" name="material" class="form-select">
-                <option value="">Все материалы</option>
-                {% for material in materials %}
-                    <option value="{{ material.pk }}" {% if selected_material == material.pk|stringformat:"s" %}selected{% endif %}>{{ material.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="user" class="form-label">Пользователь</label>
-            <select id="user" name="user" class="form-select">
-                <option value="">Все пользователи</option>
-                {% for person in users %}
-                    <option value="{{ person.pk }}" {% if selected_user == person.pk|stringformat:"s" %}selected{% endif %}>{{ person.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="sort" class="form-label">Сортировать по</label>
-            <select id="sort" name="sort" class="form-select">
-                <option value="date" {% if sort == 'date' %}selected{% endif %}>Дате</option>
-                <option value="material" {% if sort == 'material' %}selected{% endif %}>Материалу</option>
-                <option value="user" {% if sort == 'user' %}selected{% endif %}>Пользователю</option>
-            </select>
-        </div>
+        {{ form.status }}
+        {% for field in form.visible_fields %}
+            <div class="col-md-4">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}<div id="{{ field.auto_id }}_error">{% for error in field.errors %}<p class="text-danger mb-1" role="alert">{{ error }}</p>{% endfor %}</div>{% endif %}
+            </div>
+        {% endfor %}
         <div class="col-md-4">
             <button type="submit" class="btn btn-craft">Найти</button>
             <a href="{% url 'operations:list' %}" class="btn btn-outline-secondary">Сбросить</a>
         </div>
+        {% for error in form.non_field_errors %}<p class="text-danger" role="alert">{{ error }}</p>{% endfor %}
+        {% for error in form.status.errors %}<p class="text-danger" role="alert">{{ error }}</p>{% endfor %}
     </form>
     {% if error %}<p class="text-danger">{{ error }}</p>{% endif %}
 
@@ -66,7 +43,16 @@
                     {{ operation.amount|stringformat:"+d" }} шт.
                     ({{ operation.user_name|default:"неизвестный пользователь" }})
                 </a>
-                {% include "operations/includes/operation_status.html" %}
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    {% include "operations/includes/operation_status.html" %}
+                    {% if operation.status == 'active' %}
+                        <a href="{% url 'operations:update' operation.id %}" class="btn btn-sm btn-outline-secondary">Изменить</a>
+                        <form method="post" action="{% url 'operations:cancel' operation.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Отменить</button>
+                        </form>
+                    {% endif %}
+                </div>
             </li>
         {% empty %}
             <li class="list-group-item">Операции не найдены.</li>

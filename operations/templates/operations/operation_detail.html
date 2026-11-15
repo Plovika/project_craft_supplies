@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+    {% if cancel_error %}<p class="text-danger" role="alert">{{ cancel_error }}</p>{% endif %}
     {% if operation %}
         <div class="card">
             <div class="card-body">
@@ -33,6 +34,13 @@
                     <strong>Статус:</strong>
                     {% include "operations/includes/operation_status.html" %}
                 </p>
+                {% if operation.status == 'active' %}
+                    <a href="{% url 'operations:update' operation.id %}" class="btn btn-outline-secondary">Изменить</a>
+                    <form method="post" action="{% url 'operations:cancel' operation.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger">Отменить операцию</button>
+                    </form>
+                {% endif %}
             </div>
         </div>
     {% else %}
