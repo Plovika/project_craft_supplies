@@ -1,11 +1,10 @@
-import sqlite3
-
 from django.template.loader import render_to_string
-from django.test import Client, override_settings
+from django.test import Client, RequestFactory, override_settings
 from django.urls import reverse
 import pytest
 
 from models import Material, Operation, User
+from materials.models import Material as OrmMaterial
 import homepage.views
 
 client = Client()
@@ -68,7 +67,8 @@ def test_empty_materials_list():
 
 def test_empty_operations_list():
     html = render_to_string(
-        "operations/operation_list.html", {"operations": []}
+        "operations/operation_list.html", {"operations": []},
+        request=RequestFactory().get("/operations/"),
     )
     assert "Операции не найдены." in html
 
@@ -101,12 +101,7 @@ def test_custom_404_page():
 
 
 def test_page_shows_data_from_database(test_db):
-    conn = sqlite3.connect(test_db)
-    conn.execute(
-        "UPDATE materials SET name = ? WHERE id = ?", ["Акварель НОВАЯ", 1]
-    )
-    conn.commit()
-    conn.close()
+    OrmMaterial.objects.filter(pk=1).update(name="Акварель НОВАЯ")
     assert "Акварель НОВАЯ" in client.get("/materials/").content.decode()
 
 
