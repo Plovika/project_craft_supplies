@@ -16,7 +16,7 @@
                 <p class="card-text"><strong>Тип:</strong> {{ operation.kind }}</p>
                 <p class="card-text">
                     <strong>Материал:</strong>
-                    <a href="{% url 'materials:detail' operation.material_id %}">
+                    <a href="{{ operation.material.get_absolute_url }}">
                         {{ operation.material.name }}
                     </a>
                 </p>

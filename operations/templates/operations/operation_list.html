@@ -52,6 +52,7 @@
         <a class="nav-link {% if not status %}active{% endif %}" href="{% querystring status='' page=None %}">Все</a>
         <a class="nav-link {% if status == 'active' %}active{% endif %}" href="{% querystring status='active' page=None %}">Активные</a>
         <a class="nav-link {% if status == 'cancelled' %}active{% endif %}" href="{% querystring status='cancelled' page=None %}">Отменённые</a>
+        <a class="nav-link {% if status == 'completed' %}active{% endif %}" href="{% querystring status='completed' page=None %}">Завершённые</a>
     </nav>
 
     <p class="text-muted">Найдено операций: {{ page_obj.paginator.count|default:0 }}</p>

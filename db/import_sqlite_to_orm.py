@@ -56,14 +56,21 @@ def import_source(source=SOURCE_DB):
         for row in operations:
             if row["is_cancelled"] not in (0, 1):
                 raise ValueError("Некорректный признак отмены операции.")
-            Operation.objects.update_or_create(
-                pk=row["id"], defaults={
-                    "material_id": row["material_id"],
-                    "user_id": row["user_id"], "amount": row["amount"],
-                    "created_at": date.fromisoformat(row["created_at"]),
-                    "is_cancelled": bool(row["is_cancelled"]),
-                },
-            )
+            # Остатки уже перенесены из снимка ПР7. Здесь сохраняем историю
+            # без повторного применения её количества к этим остаткам.
+            values = {
+                "material_id": row["material_id"],
+                "user_id": row["user_id"], "amount": row["amount"],
+                "created_at": date.fromisoformat(row["created_at"]),
+                "status": (
+                    Operation.Status.CANCELLED if row["is_cancelled"]
+                    else Operation.Status.ACTIVE
+                ),
+            }
+            if not Operation.objects.filter(pk=row["id"]).update(**values):
+                Operation.objects.bulk_create([
+                    Operation(pk=row["id"], **values),
+                ])
 
 
 def main():

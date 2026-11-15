@@ -22,12 +22,17 @@ def statistics(request: HttpRequest) -> HttpResponse:
         min_count=Min("count"), max_count=Max("count"),
         avg_count=Round(Avg("count"), precision=1),
     )
-    active = Q(operations__is_cancelled=False)
+    active = Q(operations__status=Operation.Status.ACTIVE)
+    operation_totals = Operation.objects.aggregate(
+        total=Count("id"),
+        active=Count("id", filter=Q(status=Operation.Status.ACTIVE)),
+        cancelled=Count("id", filter=Q(status=Operation.Status.CANCELLED)),
+        completed=Count("id", filter=Q(status=Operation.Status.COMPLETED)),
+    )
     context = {
         "totals": totals,
-        "active_operations": Operation.objects.filter(
-            is_cancelled=False,
-        ).count(),
+        "active_operations": operation_totals["active"],
+        "operation_totals": operation_totals,
         "low_stock": Material.objects.filter(
             count__lte=LOW_STOCK_LIMIT,
         ).order_by("count", "name", "pk")[:5],

@@ -2,7 +2,7 @@
 
 from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Material
 
@@ -56,9 +56,9 @@ def material_search(request: HttpRequest) -> HttpResponse:
     })
 
 
-def material_detail(request: HttpRequest, material_id: int) -> HttpResponse:
+def material_detail(request: HttpRequest, slug: str) -> HttpResponse:
     try:
-        material = get_object_or_404(Material, pk=material_id)
+        material = get_object_or_404(Material, slug=slug)
     except Http404:
         # Сохраняем существующее оформление отсутствующего материала.
         return render(
@@ -69,3 +69,16 @@ def material_detail(request: HttpRequest, material_id: int) -> HttpResponse:
     return render(request, "materials/material_detail.html", {
         "material": material, "history": history,
     })
+
+
+def material_legacy_detail(
+    request: HttpRequest, material_id: int,
+) -> HttpResponse:
+    try:
+        material = get_object_or_404(Material, pk=material_id)
+    except Http404:
+        return render(
+            request, "materials/material_detail.html",
+            {"material": None}, status=404,
+        )
+    return redirect(material.get_absolute_url(), permanent=True)

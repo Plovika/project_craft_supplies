@@ -28,10 +28,12 @@ def operations(request: HttpRequest) -> HttpResponse:
         sort = "date"
     error = ""
     operations_list = Operation.objects.all()
-    if status == "active":
-        operations_list = operations_list.exclude(is_cancelled=True)
-    elif status == "cancelled":
-        operations_list = operations_list.filter(is_cancelled=True)
+    if status == Operation.Status.ACTIVE:
+        operations_list = operations_list.active()
+    elif status == Operation.Status.CANCELLED:
+        operations_list = operations_list.cancelled()
+    elif status == Operation.Status.COMPLETED:
+        operations_list = operations_list.completed()
     else:
         status = ""
     if selected_date:
@@ -40,7 +42,7 @@ def operations(request: HttpRequest) -> HttpResponse:
         except ValueError:
             error = "Укажите корректную дату в формате ГГГГ-ММ-ДД."
         else:
-            operations_list = operations_list.filter(created_at=parsed_date)
+            operations_list = operations_list.for_date(parsed_date)
     for field, value in (("material_id", material_id), ("user_id", user_id)):
         if value:
             try:
@@ -62,13 +64,14 @@ def operations(request: HttpRequest) -> HttpResponse:
         operations_list = operations_list.none()
     operations_list = operations_list.annotate(
         material_name=F("material__name"), user_name=F("user__name"),
+        material_slug=F("material__slug"),
         kind=Case(
             When(amount__gt=0, then=Value("Пополнение")),
             default=Value("Расход"), output_field=CharField(),
         ),
     ).values(
-        "id", "created_at", "amount", "is_cancelled", "kind",
-        "material_id", "material_name", "user_name",
+        "id", "created_at", "amount", "status", "kind",
+        "material_id", "material_slug", "material_name", "user_name",
     ).order_by(SORT_FIELDS[sort], "-id")
     page_obj = Paginator(operations_list, 5).get_page(request.GET.get("page"))
     return render(request, "operations/operation_list.html", {

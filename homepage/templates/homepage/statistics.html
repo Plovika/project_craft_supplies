@@ -32,6 +32,8 @@
         </div>
     </div>
 
+    <p class="text-muted">Всего операций: {{ operation_totals.total }} · Активных: {{ operation_totals.active }} · Отменённых: {{ operation_totals.cancelled }} · Завершённых: {{ operation_totals.completed }}</p>
+
     <div class="row g-4">
         <section class="col-lg-6">
             <h2 class="h5">По категориям</h2>
@@ -61,7 +63,7 @@
             <ul class="list-group">
                 {% for material in low_stock %}
                     <li class="list-group-item d-flex justify-content-between">
-                        <a href="{% url 'materials:detail' material.id %}">{{ material.name }}</a>
+                        <a href="{{ material.get_absolute_url }}">{{ material.name }}</a>
                         <span class="badge bg-danger">{{ material.count }} шт.</span>
                     </li>
                 {% empty %}

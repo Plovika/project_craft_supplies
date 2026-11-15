@@ -1,9 +1,7 @@
-{% if operation.is_cancelled %}
-    <span class="badge bg-secondary operation-status operation-status-cancelled">
-        Отменена
-    </span>
+{% if operation.status == 'cancelled' %}
+    <span class="badge bg-secondary operation-status operation-status-cancelled">Отменена</span>
+{% elif operation.status == 'completed' %}
+    <span class="badge bg-secondary operation-status">Завершена</span>
 {% else %}
-    <span class="badge bg-success operation-status operation-status-active">
-        Активна
-    </span>
+    <span class="badge bg-success operation-status operation-status-active">Активна</span>
 {% endif %}
